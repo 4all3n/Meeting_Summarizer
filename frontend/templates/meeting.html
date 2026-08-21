@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}{{ meeting.filename if meeting else 'Not Found' }} — Meeting Summarizer{% endblock %}
+
+{% block content %}
+{% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <p class="text-red-600 font-medium">{{ error }}</p>
+        <a href="/" class="text-indigo-600 hover:underline text-sm mt-2 inline-block">← Go back</a>
+    </div>
+
+{% elif meeting %}
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <a href="/" class="text-indigo-600 hover:underline text-sm font-medium">← Back to Meetings</a>
+        
+        <div class="flex flex-wrap items-center gap-2">
+            {% if meeting.status in ['completed', 'failed'] %}
+            <button onclick="resummarize({{ meeting.id }})" id="resummarize-btn"
+                    title="Re-generate summary using the existing transcript"
+                    class="text-xs bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 py-1.5 px-3 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-1.5">
+                🔄 Re-generate Summary
+            </button>
+
+            <button onclick="retranscribe({{ meeting.id }})" id="retranscribe-btn"
+                    title="Re-run Whisper audio transcription from scratch and generate new summary"
+                    class="text-xs bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 py-1.5 px-3 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-1.5">
+                🎙️ Re-transcribe & Summarize
+            </button>
+            {% endif %}
+
+            <button onclick="deleteMeeting(event, {{ meeting.id }}, true)"
+                    title="Delete this meeting and audio recording"
+                    class="text-xs bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 py-1.5 px-3 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-1.5">
+                🗑️ Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- header -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex items-start justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ meeting.filename }}</h1>
+                <p class="text-sm text-gray-500 mt-1">
+                    Uploaded: {{ meeting.created_at[:16] if meeting.created_at else 'Unknown' }}
+                    {% if meeting.duration %}
+                        · Duration: {{ "%.0f"|format(meeting.duration // 60) }}m {{ "%.0f"|format(meeting.duration % 60) }}s
+                    {% endif %}
+                    {% if meeting.language and meeting.language != 'auto' %}
+                        · Language: <span class="uppercase font-semibold text-gray-700">{{ meeting.language }}</span>
+                    {% endif %}
+                </p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-medium
+                {% if meeting.status == 'completed' %}bg-green-100 text-green-700
+                {% elif meeting.status == 'failed' %}bg-red-100 text-red-700
+                {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                {{ meeting.status | capitalize }}
+            </span>
+        </div>
+    </div>
+
+    {% if meeting.status == 'completed' %}
+
+        <!-- summary -->
+        {% if meeting.summary %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">📝 Summary</h2>
+                <button onclick="download('summary')" class="text-sm text-indigo-600 hover:underline">
+                    Download .md
+                </button>
+            </div>
+            <div id="summary-content" class="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">{{ meeting.summary }}</div>
+        </div>
+        {% endif %}
+
+        <!-- action items -->
+        {% if meeting.action_items %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">✅ Action Items</h2>
+            <div id="actions-content" class="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">{{ meeting.action_items }}</div>
+        </div>
+        {% endif %}
+
+        <!-- transcript (click to expand) -->
+        {% if meeting.transcript %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-center justify-between mb-4 cursor-pointer" onclick="toggleTranscript()">
+                <h2 class="text-lg font-semibold text-gray-900">🎙️ Full Transcript</h2>
+                <div class="flex items-center gap-3">
+                    <button onclick="event.stopPropagation(); download('transcript')"
+                            class="text-sm text-indigo-600 hover:underline">Download .txt</button>
+                    <span id="toggle-icon" class="text-gray-400 text-lg">▼</span>
+                </div>
+            </div>
+            <div id="transcript-body" class="hidden">
+                <div id="transcript-content" class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">{{ meeting.transcript }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+    {% elif meeting.status == 'failed' %}
+        <div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
+            <h2 class="text-lg font-semibold text-red-700 mb-2">Processing Failed</h2>
+            <p class="text-red-600 text-sm mb-4">{{ meeting.error_message or 'Something went wrong.' }}</p>
+            <div class="flex flex-wrap items-center gap-3">
+                <button onclick="resummarize({{ meeting.id }})" class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                    🔄 Retry Summarization
+                </button>
+                <button onclick="retranscribe({{ meeting.id }})" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                    🎙️ Re-transcribe Audio
+                </button>
+            </div>
+        </div>
+
+        {% if meeting.transcript %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4">🎙️ Transcribed Audio (Saved)</h2>
+            <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">{{ meeting.transcript }}</div>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- still processing — auto refresh -->
+        <div id="processing-box" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center" data-id="{{ meeting.id }}">
+            <div class="animate-spin h-10 w-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full mx-auto mb-4"></div>
+            <p class="text-gray-600 font-medium">Processing your meeting...</p>
+            <p class="text-sm text-gray-400 mt-1">Status: <span id="current-status">{{ meeting.status | capitalize }}</span></p>
+            <p class="text-xs text-gray-400 mt-2">This page will refresh automatically when done.</p>
+        </div>
+    {% endif %}
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// toggle transcript visibility
+function toggleTranscript() {
+    let body = document.getElementById('transcript-body');
+    let icon = document.getElementById('toggle-icon');
+    body.classList.toggle('hidden');
+    icon.textContent = body.classList.contains('hidden') ? '▼' : '▲';
+}
+
+// download transcript or summary as a file
+function download(type) {
+    let name = '{{ meeting.filename if meeting else "meeting" }}'.replace(/\.[^/.]+$/, '');
+    let content, ext;
+
+    if (type === 'summary') {
+        content = document.getElementById('summary-content').textContent;
+        ext = '.md';
+    } else {
+        content = document.getElementById('transcript-content').textContent;
+        ext = '.txt';
+    }
+
+    let blob = new Blob([content], { type: 'text/plain' });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name + '_' + type + ext;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+// re-generate summary using existing transcript
+async function resummarize(meetingId) {
+    try {
+        let btn = document.getElementById('resummarize-btn');
+        if (btn) btn.disabled = true;
+        let res = await fetch(`http://localhost:8000/api/meetings/${meetingId}/resummarize`, { method: 'POST' });
+        if (res.ok) {
+            location.reload();
+        } else {
+            alert('Failed to trigger re-summarization');
+            if (btn) btn.disabled = false;
+        }
+    } catch(e) {
+        alert('Could not reach backend');
+    }
+}
+
+// re-transcribe from audio file + summarize
+async function retranscribe(meetingId) {
+    let chosenLang = prompt('Enter language code (e.g. en, es, fr, de, hi) or leave blank for auto-detect:', 'en');
+    if (chosenLang === null) return; // user cancelled
+
+    try {
+        let btn = document.getElementById('retranscribe-btn');
+        if (btn) btn.disabled = true;
+
+        let formData = new FormData();
+        formData.append('language', chosenLang.trim() || 'auto');
+
+        let res = await fetch(`http://localhost:8000/api/meetings/${meetingId}/retranscribe`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (res.ok) {
+            location.reload();
+        } else {
+            let err = await res.json();
+            alert('Failed to re-transcribe: ' + (err.detail || 'Unknown error'));
+            if (btn) btn.disabled = false;
+        }
+    } catch(e) {
+        alert('Could not reach backend');
+    }
+}
+
+// poll status every 2 seconds if meeting is still processing
+let box = document.getElementById('processing-box');
+if (box) {
+    let meetingId = box.dataset.id;
+    let timer = setInterval(async () => {
+        try {
+            let res = await fetch(`http://localhost:8000/api/meetings/${meetingId}/status`);
+            let data = await res.json();
+            document.getElementById('current-status').textContent =
+                data.status.charAt(0).toUpperCase() + data.status.slice(1);
+
+            if (data.status === 'completed' || data.status === 'failed') {
+                clearInterval(timer);
+                location.reload();
+            }
+        } catch(e) {
+            // backend might be busy, just keep trying
+        }
+    }, 2000);
+}
+</script>
+{% endblock %}

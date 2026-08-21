@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Assessment planning docs (local only)
+plans/
+
+# Project-specific
+backend/uploads/
+*.db
+.env
+sample_audio/
