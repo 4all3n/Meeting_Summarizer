@@ -13,7 +13,6 @@ class Meeting(Base):
     duration: Mapped[float | None] = mapped_column(Float, nullable=True)
     language: Mapped[str | None] = mapped_column(String(20), nullable=True, default="auto")
 
-    # status can be: processing, transcribing, summarizing, completed, failed
     status: Mapped[str] = mapped_column(String(20), default="processing")
 
     transcript: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -24,9 +23,7 @@ class Meeting(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True
-    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     def __repr__(self):
         return f"<Meeting {self.id}: {self.filename} ({self.status})>"

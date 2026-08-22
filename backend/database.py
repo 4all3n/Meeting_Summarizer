@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from backend.config import DATABASE_URL, BASE_DIR
 
-# sqlite needs this arg to work with fastapi threads
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -14,10 +13,10 @@ class Base(DeclarativeBase):
 
 
 def init_db():
-    """create tables and ensure all columns exist"""
+    """create tables if they dont exist, and add any missing columns"""
     Base.metadata.create_all(bind=engine)
 
-    # auto-migration for sqlite: ensure language column exists
+    # had to add language column later so this handles old databases
     db_file = BASE_DIR / "meetings.db"
     if db_file.exists():
         try:
@@ -30,10 +29,9 @@ def init_db():
                 conn.commit()
             conn.close()
         except Exception as e:
-            print(f"[!] DB migration note: {e}")
+            print(f"[!] migration warning: {e}")
 
 
-# dependency injection for db sessions in routes
 def get_db():
     db = SessionLocal()
     try:

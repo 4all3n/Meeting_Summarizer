@@ -5,26 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Meeting Summarizer{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    ef: {
+                        dim:    '#232a2e',
+                        bg:     '#2d353b',
+                        bg1:    '#343f44',
+                        bg2:    '#3d484d',
+                        bg3:    '#475258',
+                        bg4:    '#4f585e',
+                        fg:     '#d3c6aa',
+                        green:  '#a7c080',
+                        aqua:   '#83c092',
+                        blue:   '#7fbbb3',
+                        red:    '#e67e80',
+                        orange: '#e69875',
+                        yellow: '#dbbc7f',
+                        purple: '#d699b6',
+                        grey0:  '#7a8478',
+                        grey1:  '#859289',
+                        grey2:  '#9da9a0',
+                    }
+                },
+                borderRadius: {
+                    '2xl': '1rem',
+                    '3xl': '1.25rem',
+                }
+            }
+        }
+    }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 </head>
-<body class="h-full bg-gray-50 text-gray-900">
+<body class="h-full bg-ef-dim text-ef-fg" data-api="http://localhost:8000/api">
 
-    <nav class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="/" class="flex items-center gap-2 text-xl font-bold text-indigo-600">
+    <!-- minimal header -->
+    <header class="px-6 py-5">
+        <div class="max-w-6xl mx-auto">
+            <a href="/" class="text-xl font-bold text-ef-green tracking-tight">
                 Meeting Summarizer
             </a>
-            <span class="text-sm text-gray-400">Whisper + Gemini</span>
         </div>
-    </nav>
+    </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-8">
+    <main class="max-w-6xl mx-auto px-6 pb-12">
         {% block content %}{% endblock %}
     </main>
-
-    <footer class="text-center text-sm text-gray-400 py-6 border-t border-gray-100 mt-auto">
-        Meeting Summarizer &mdash; Built with Whisper ASR &amp; Gemini LLM
-    </footer>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}

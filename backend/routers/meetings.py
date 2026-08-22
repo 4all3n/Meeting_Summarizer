@@ -2,10 +2,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from backend.config import UPLOAD_DIR, MAX_UPLOAD_SIZE_MB, ALLOWED_EXTENSIONS, DATABASE_URL
-from backend.database import get_db
+from backend.config import UPLOAD_DIR, MAX_UPLOAD_SIZE_MB, ALLOWED_EXTENSIONS
+from backend.database import SessionLocal, get_db
 from backend.models import Meeting
 from backend.services.transcription import transcribe_audio
 from backend.services.summarization import summarize_transcript
@@ -14,21 +15,18 @@ router = APIRouter()
 
 
 def process_meeting(meeting_id: int, audio_path: str, force_retranscribe: bool = False, target_language: str = None):
-    """runs in background — transcribes the audio (if needed) then summarizes it"""
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import Session as DBSession
-
-    eng = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-    with DBSession(eng) as db:
+    """background task that transcribes audio then summarizes it"""
+    db = SessionLocal()
+    try:
         meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
         if not meeting:
             return
 
         try:
-            # step 1 — transcribe audio
             lang_to_use = target_language if target_language is not None else meeting.language
+
             if force_retranscribe or not meeting.transcript:
-                print(f"[*] Transcribing: {meeting.filename} (language: {lang_to_use or 'auto'})")
+                print(f"[*] Transcribing: {meeting.filename} (lang={lang_to_use or 'auto'})")
                 meeting.status = "transcribing"
                 meeting.error_message = None
                 if target_language is not None:
@@ -40,9 +38,9 @@ def process_meeting(meeting_id: int, audio_path: str, force_retranscribe: bool =
                 meeting.duration = result.get("duration")
                 print(f"[+] Transcription done for {meeting.filename}")
             else:
-                print(f"[*] Using existing transcript for: {meeting.filename}")
+                print(f"[*] Reusing existing transcript for {meeting.filename}")
 
-            # step 2 — generate summary with gemini
+            # now summarize
             print(f"[*] Summarizing: {meeting.filename}")
             meeting.status = "summarizing"
             meeting.error_message = None
@@ -52,10 +50,9 @@ def process_meeting(meeting_id: int, audio_path: str, force_retranscribe: bool =
             meeting.summary = summary["summary"]
             meeting.action_items = summary.get("action_items", "")
 
-            # mark as done
             meeting.status = "completed"
             meeting.completed_at = datetime.now(timezone.utc)
-            print(f"[+] Done processing: {meeting.filename}")
+            print(f"[+] Done: {meeting.filename}")
 
         except Exception as e:
             print(f"[!] Error processing {meeting.filename}: {e}")
@@ -63,6 +60,8 @@ def process_meeting(meeting_id: int, audio_path: str, force_retranscribe: bool =
             meeting.error_message = str(e)
 
         db.commit()
+    finally:
+        db.close()
 
 
 @router.post("/upload")
@@ -72,9 +71,7 @@ async def upload_meeting(
     language: str = Form("auto"),
     db: Session = Depends(get_db),
 ):
-    """upload an audio file — kicks off transcription + summarization in background"""
-
-    # check file extension
+    # validate extension
     ext = Path(file.filename).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -82,7 +79,6 @@ async def upload_meeting(
             detail=f"File type '{ext}' not supported. Use: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
         )
 
-    # read file and check size
     contents = await file.read()
     size_mb = len(contents) / (1024 * 1024)
     if size_mb > MAX_UPLOAD_SIZE_MB:
@@ -91,12 +87,11 @@ async def upload_meeting(
             detail=f"File too large ({size_mb:.1f}MB). Max is {MAX_UPLOAD_SIZE_MB}MB.",
         )
 
-    # save to disk with timestamp prefix to avoid name collisions
+    # save file
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     save_path = UPLOAD_DIR / f"{timestamp}_{file.filename}"
     save_path.write_bytes(contents)
 
-    # create db record
     meeting = Meeting(
         filename=file.filename,
         audio_path=str(save_path),
@@ -107,7 +102,6 @@ async def upload_meeting(
     db.commit()
     db.refresh(meeting)
 
-    # start processing in background so we can return immediately
     background_tasks.add_task(process_meeting, meeting.id, str(save_path), False, language)
 
     return {
@@ -121,7 +115,6 @@ async def upload_meeting(
 
 @router.get("")
 def list_meetings(db: Session = Depends(get_db)):
-    """get all meetings sorted by newest first"""
     meetings = db.query(Meeting).order_by(Meeting.created_at.desc()).all()
     return [
         {
@@ -129,7 +122,7 @@ def list_meetings(db: Session = Depends(get_db)):
             "filename": m.filename,
             "status": m.status,
             "duration": m.duration,
-            "language": getattr(m, "language", "auto"),
+            "language": m.language or "auto",
             "created_at": m.created_at.isoformat() if m.created_at else None,
         }
         for m in meetings
@@ -138,7 +131,6 @@ def list_meetings(db: Session = Depends(get_db)):
 
 @router.get("/{meeting_id}")
 def get_meeting(meeting_id: int, db: Session = Depends(get_db)):
-    """get full details for a single meeting"""
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
@@ -148,11 +140,12 @@ def get_meeting(meeting_id: int, db: Session = Depends(get_db)):
         "filename": meeting.filename,
         "status": meeting.status,
         "duration": meeting.duration,
-        "language": getattr(meeting, "language", "auto"),
+        "language": meeting.language or "auto",
         "transcript": meeting.transcript,
         "summary": meeting.summary,
         "action_items": meeting.action_items,
         "error_message": meeting.error_message,
+        "audio_path": meeting.audio_path,
         "created_at": meeting.created_at.isoformat() if meeting.created_at else None,
         "completed_at": meeting.completed_at.isoformat() if meeting.completed_at else None,
     }
@@ -160,11 +153,37 @@ def get_meeting(meeting_id: int, db: Session = Depends(get_db)):
 
 @router.get("/{meeting_id}/status")
 def get_status(meeting_id: int, db: Session = Depends(get_db)):
-    """quick endpoint to poll processing status from the frontend"""
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     return {"id": meeting.id, "status": meeting.status}
+
+
+@router.get("/{meeting_id}/audio")
+def get_audio(meeting_id: int, db: Session = Depends(get_db)):
+    """serve the uploaded audio file for playback"""
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+
+    audio_file = Path(meeting.audio_path)
+    if not audio_file.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found on disk")
+
+    # figure out the mime type from extension
+    ext = audio_file.suffix.lower()
+    mime_types = {
+        ".wav": "audio/wav",
+        ".mp3": "audio/mpeg",
+        ".m4a": "audio/mp4",
+        ".ogg": "audio/ogg",
+        ".flac": "audio/flac",
+        ".webm": "audio/webm",
+        ".aac": "audio/aac",
+    }
+    media_type = mime_types.get(ext, "application/octet-stream")
+
+    return FileResponse(audio_file, media_type=media_type, filename=meeting.filename)
 
 
 @router.post("/{meeting_id}/resummarize")
@@ -173,7 +192,7 @@ def resummarize_meeting(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
-    """re-run summarization only (uses the existing transcript)"""
+    """re-run just the summarization on the existing transcript"""
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
@@ -193,13 +212,13 @@ def retranscribe_meeting(
     language: str = Form(None),
     db: Session = Depends(get_db),
 ):
-    """re-run full transcription from audio + summarization"""
+    """re-run whisper from the audio file + re-summarize"""
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
 
     if not Path(meeting.audio_path).exists():
-        raise HTTPException(status_code=400, detail="Original audio file no longer exists")
+        raise HTTPException(status_code=400, detail="Original audio file not found")
 
     meeting.status = "processing"
     meeting.transcript = None
@@ -211,23 +230,22 @@ def retranscribe_meeting(
     db.commit()
 
     background_tasks.add_task(process_meeting, meeting.id, meeting.audio_path, True, language or meeting.language)
-    return {"message": "Re-transcription and summarization started.", "status": meeting.status}
+    return {"message": "Re-transcription started.", "status": meeting.status}
 
 
 @router.delete("/{meeting_id}")
 def delete_meeting(meeting_id: int, db: Session = Depends(get_db)):
-    """delete a meeting and its audio file"""
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
 
-    # remove the audio file too
+    # try to clean up the audio file
     try:
         audio = Path(meeting.audio_path)
         if audio.exists():
             audio.unlink()
     except Exception as e:
-        print(f"[!] Error deleting audio file: {e}")
+        print(f"[!] couldn't delete audio file: {e}")
 
     db.delete(meeting)
     db.commit()
