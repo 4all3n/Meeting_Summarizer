@@ -9,6 +9,38 @@ function cleanMarkdownCheckboxes(text) {
 }
 
 
+// ============ live backend status checker ============
+
+function checkBackendHealth() {
+    var badge = document.getElementById('backend-status-badge');
+    var dot = document.getElementById('backend-status-dot');
+    var text = document.getElementById('backend-status-text');
+    if (!badge || !dot || !text) return;
+
+    var healthUrl = API_BASE.replace(/\/api\/?$/, '') + '/';
+
+    fetch(healthUrl, { method: 'GET', cache: 'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined })
+        .then(function (res) {
+            if (res.ok) {
+                dot.className = 'w-2 h-2 rounded-full bg-ef-green animate-pulse';
+                text.textContent = 'Backend: Online';
+                badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ef-bg1 border border-ef-bg2 text-ef-grey2 transition-all';
+            } else {
+                setOffline();
+            }
+        })
+        .catch(function () {
+            setOffline();
+        });
+
+    function setOffline() {
+        dot.className = 'w-2 h-2 rounded-full bg-ef-red';
+        text.textContent = 'Backend: Offline';
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ef-red/15 border border-ef-red/30 text-ef-red transition-all';
+    }
+}
+
+
 // ============ shared functions ============
 
 async function deleteMeeting(event, meetingId, redirectHome) {
@@ -43,13 +75,17 @@ async function deleteMeeting(event, meetingId, redirectHome) {
 }
 
 
-// ============ upload page (index.html) ============
+// ============ upload page (index.html) & detail page ============
 
 document.addEventListener('DOMContentLoaded', function () {
     // initialize lucide icons
     if (window.lucide) {
         lucide.createIcons();
     }
+
+    // check backend status on load & every 6 seconds
+    checkBackendHealth();
+    setInterval(checkBackendHealth, 6000);
 
     // --- upload form setup ---
     var dropZone = document.getElementById('drop-zone');
@@ -165,14 +201,90 @@ document.addEventListener('DOMContentLoaded', function () {
         actionsDiv.innerHTML = marked.parse(cleanActions);
     }
 
-    // set up audio player source
-    var audioEl = document.querySelector('audio[data-meeting-id]');
-    if (audioEl) {
-        var mid = audioEl.dataset.meetingId;
-        var sourceEl = audioEl.querySelector('source');
+    // Custom Everforest Audio Player Setup
+    var audio = document.getElementById('meeting-audio');
+    if (audio) {
+        var mid = audio.dataset.meetingId;
+        var sourceEl = audio.querySelector('source');
         if (sourceEl) {
             sourceEl.src = API_BASE + '/meetings/' + mid + '/audio';
-            audioEl.load();
+            audio.load();
+        }
+
+        var playPauseBtn = document.getElementById('play-pause-btn');
+        var audioProgressBar = document.getElementById('audio-progress-bar');
+        var progressContainer = document.getElementById('audio-progress-container');
+        var timeDisplay = document.getElementById('audio-time');
+        var muteBtn = document.getElementById('mute-btn');
+
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds === Infinity) return '00:00';
+            var m = Math.floor(seconds / 60);
+            var s = Math.floor(seconds % 60);
+            return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        }
+
+        function updatePlayPauseIcon(isPlaying) {
+            if (!playPauseBtn) return;
+            var iconName = isPlaying ? 'pause' : 'play';
+            var extraClass = isPlaying ? '' : ' ml-0.5';
+            playPauseBtn.innerHTML = '<i data-lucide="' + iconName + '" class="w-4 h-4 fill-current' + extraClass + '"></i>';
+            if (window.lucide) lucide.createIcons({ root: playPauseBtn });
+        }
+
+        function updateMuteIcon(isMuted) {
+            if (!muteBtn) return;
+            var iconName = isMuted ? 'volume-x' : 'volume-2';
+            var colorClass = isMuted ? 'text-ef-red' : 'text-ef-grey1 hover:text-ef-fg';
+            muteBtn.innerHTML = '<i data-lucide="' + iconName + '" class="w-4 h-4 ' + colorClass + '"></i>';
+            if (window.lucide) lucide.createIcons({ root: muteBtn });
+        }
+
+        if (playPauseBtn) {
+            playPauseBtn.addEventListener('click', function () {
+                if (audio.paused) {
+                    audio.play();
+                    updatePlayPauseIcon(true);
+                } else {
+                    audio.pause();
+                    updatePlayPauseIcon(false);
+                }
+            });
+        }
+
+        audio.addEventListener('timeupdate', function () {
+            if (audio.duration) {
+                var pct = (audio.currentTime / audio.duration) * 100;
+                if (audioProgressBar) audioProgressBar.style.width = pct + '%';
+                if (timeDisplay) timeDisplay.textContent = formatTime(audio.currentTime) + ' / ' + formatTime(audio.duration);
+            }
+        });
+
+        audio.addEventListener('loadedmetadata', function () {
+            if (timeDisplay && audio.duration) {
+                timeDisplay.textContent = '00:00 / ' + formatTime(audio.duration);
+            }
+        });
+
+        audio.addEventListener('ended', function () {
+            updatePlayPauseIcon(false);
+            if (audioProgressBar) audioProgressBar.style.width = '0%';
+        });
+
+        if (progressContainer) {
+            progressContainer.addEventListener('click', function (e) {
+                if (!audio.duration) return;
+                var rect = progressContainer.getBoundingClientRect();
+                var pos = (e.clientX - rect.left) / rect.width;
+                audio.currentTime = pos * audio.duration;
+            });
+        }
+
+        if (muteBtn) {
+            muteBtn.addEventListener('click', function () {
+                audio.muted = !audio.muted;
+                updateMuteIcon(audio.muted);
+            });
         }
     }
 

@@ -81,8 +81,7 @@
     font-size: 0.85em;
 }
 
-/* Audio player customization */
-.custom-audio {
-    filter: invert(0.88) hue-rotate(140deg);
-    opacity: 0.9;
+/* Audio seek bar hover animation */
+#audio-progress-container:hover #audio-progress-bar {
+    filter: brightness(1.15);
 }

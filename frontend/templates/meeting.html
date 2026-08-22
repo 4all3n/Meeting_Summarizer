@@ -3,91 +3,141 @@
 
 {% block content %}
 {% if error %}
-    <div class="bg-ef-bg rounded-2xl border border-ef-red/30 p-8 text-center">
-        <p class="text-ef-red font-medium mb-3">{{ error }}</p>
+    <div class="bg-ef-bg rounded-3xl border border-ef-red/30 p-8 text-center shadow-xl shadow-black/10">
+        <div class="w-12 h-12 rounded-full bg-ef-red/15 text-ef-red flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="alert-circle" class="w-6 h-6"></i>
+        </div>
+        <p class="text-ef-red font-semibold mb-3">{{ error }}</p>
         <a href="/" class="text-ef-green hover:underline text-sm inline-flex items-center gap-1.5">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Meetings
         </a>
     </div>
 
 {% elif meeting %}
-    <!-- top navigation & action buttons -->
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <a href="/" class="text-ef-grey2 hover:text-ef-fg text-sm font-medium inline-flex items-center gap-1.5 transition-colors">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Meetings
+    <!-- Top Action Bar -->
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <a href="/" class="text-xs font-semibold text-ef-grey2 hover:text-ef-fg bg-ef-bg border border-ef-bg2 hover:border-ef-bg3 py-2 px-3.5 rounded-full inline-flex items-center gap-1.5 transition-all shadow-sm">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Meetings
         </a>
         
         <div class="flex flex-wrap items-center gap-2">
             {% if meeting.status in ['completed', 'failed'] %}
             <button onclick="resummarize({{ meeting.id }})" id="resummarize-btn"
                     title="Re-generate summary using the existing transcript"
-                    class="text-xs bg-ef-bg hover:bg-ef-bg1 border border-ef-bg2 text-ef-fg py-2 px-3.5 rounded-xl font-medium transition-all inline-flex items-center gap-1.5">
+                    class="text-xs bg-ef-bg hover:bg-ef-bg1 border border-ef-bg2 text-ef-fg py-2 px-3.5 rounded-full font-medium transition-all inline-flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-ef-aqua"></i> Re-generate Summary
             </button>
 
             <button onclick="retranscribe({{ meeting.id }})" id="retranscribe-btn"
                     title="Re-run Whisper audio transcription from scratch"
-                    class="text-xs bg-ef-bg hover:bg-ef-bg1 border border-ef-bg2 text-ef-fg py-2 px-3.5 rounded-xl font-medium transition-all inline-flex items-center gap-1.5">
+                    class="text-xs bg-ef-bg hover:bg-ef-bg1 border border-ef-bg2 text-ef-fg py-2 px-3.5 rounded-full font-medium transition-all inline-flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="mic" class="w-3.5 h-3.5 text-ef-yellow"></i> Re-transcribe & Summarize
             </button>
             {% endif %}
 
             <button onclick="deleteMeeting(event, {{ meeting.id }}, true)"
                     title="Delete this meeting and audio file"
-                    class="text-xs bg-ef-red/10 hover:bg-ef-red/20 border border-ef-red/20 text-ef-red py-2 px-3.5 rounded-xl font-medium transition-all inline-flex items-center gap-1.5">
+                    class="text-xs bg-ef-red/10 hover:bg-ef-red/20 border border-ef-red/20 text-ef-red py-2 px-3.5 rounded-full font-medium transition-all inline-flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
             </button>
         </div>
     </div>
 
-    <!-- header card with audio player -->
-    <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 mb-6">
+    <!-- Header Card with Custom Pill Audio Player -->
+    <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 mb-6 shadow-xl shadow-black/10">
         <div class="flex items-start justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-bold text-ef-fg">{{ meeting.filename }}</h1>
-                <p class="text-sm text-ef-grey1 mt-1.5 flex flex-wrap items-center gap-2">
+            <div class="min-w-0">
+                <h1 class="text-xl font-bold text-ef-fg tracking-tight truncate">{{ meeting.filename }}</h1>
+                <p class="text-xs text-ef-grey1 mt-1.5 flex flex-wrap items-center gap-2">
                     <span>Uploaded: {{ meeting.created_at[:16] if meeting.created_at else 'Unknown' }}</span>
                     {% if meeting.duration %}
                         <span>· Duration: {{ "%.0f"|format(meeting.duration // 60) }}m {{ "%.0f"|format(meeting.duration % 60) }}s</span>
                     {% endif %}
                     {% if meeting.language and meeting.language != 'auto' %}
-                        <span>· Language: <span class="uppercase font-semibold text-ef-fg bg-ef-bg2 px-1.5 py-0.5 rounded-md text-xs">{{ meeting.language }}</span></span>
+                        <span>· Language: <span class="uppercase font-semibold text-ef-fg bg-ef-bg1 border border-ef-bg2 px-1.5 py-0.5 rounded-md text-[10px]">{{ meeting.language }}</span></span>
                     {% endif %}
                 </p>
             </div>
-            <span class="px-3 py-1 rounded-full text-xs font-medium shrink-0
-                {% if meeting.status == 'completed' %}bg-ef-green/15 text-ef-green
-                {% elif meeting.status == 'failed' %}bg-ef-red/15 text-ef-red
-                {% else %}bg-ef-yellow/15 text-ef-yellow{% endif %}">
+            <span class="px-3 py-1 rounded-full text-xs font-semibold shrink-0
+                {% if meeting.status == 'completed' %}bg-ef-green/15 text-ef-green border border-ef-green/20
+                {% elif meeting.status == 'failed' %}bg-ef-red/15 text-ef-red border border-ef-red/20
+                {% else %}bg-ef-yellow/15 text-ef-yellow border border-ef-yellow/20{% endif %}">
                 {{ meeting.status | capitalize }}
             </span>
         </div>
 
-        <!-- audio player -->
+        <!-- Custom Everforest Audio Player Pill -->
         {% if meeting.audio_path %}
         <div class="mt-5 pt-4 border-t border-ef-bg2">
-            <p class="text-xs font-semibold text-ef-grey2 mb-2 flex items-center gap-1.5">
-                <i data-lucide="volume-2" class="w-3.5 h-3.5 text-ef-green"></i> Audio Playback
-            </p>
-            <audio controls preload="metadata" class="w-full rounded-xl custom-audio"
-                   data-meeting-id="{{ meeting.id }}">
+            <div class="flex items-center justify-between mb-2.5">
+                <p class="text-xs font-semibold text-ef-grey2 flex items-center gap-1.5">
+                    <i data-lucide="volume-2" class="w-3.5 h-3.5 text-ef-green"></i> Audio Playback
+                </p>
+                <span id="audio-time" class="text-xs font-mono text-ef-grey1">00:00 / 00:00</span>
+            </div>
+
+            <!-- Hidden Native Audio -->
+            <audio id="meeting-audio" preload="metadata" data-meeting-id="{{ meeting.id }}" class="hidden">
                 <source src="" type="audio/mpeg">
-                Your browser does not support audio playback.
             </audio>
+
+            <!-- Pill Player Bar -->
+            <div class="bg-ef-bg1 border border-ef-bg3 rounded-full p-2 pr-4 flex items-center gap-3 shadow-md shadow-black/20">
+                <button id="play-pause-btn" type="button" title="Play / Pause"
+                        class="w-9 h-9 rounded-full bg-ef-green text-ef-dim flex items-center justify-center hover:brightness-110 active:scale-95 transition-all shrink-0 shadow-sm">
+                    <i id="play-pause-icon" data-lucide="play" class="w-4 h-4 fill-current ml-0.5"></i>
+                </button>
+
+                <!-- Seek Bar -->
+                <div id="audio-progress-container" class="flex-1 relative cursor-pointer py-2 group">
+                    <div class="w-full bg-ef-bg2 rounded-full h-2 overflow-hidden">
+                        <div id="audio-progress-bar" class="bg-ef-green h-full rounded-full w-0 transition-all"></div>
+                    </div>
+                </div>
+
+                <!-- Mute Toggle -->
+                <button id="mute-btn" type="button" title="Mute / Unmute"
+                        class="text-ef-grey1 hover:text-ef-fg p-1.5 rounded-full hover:bg-ef-bg2 transition-colors shrink-0">
+                    <i id="mute-icon" data-lucide="volume-2" class="w-4 h-4"></i>
+                </button>
+            </div>
         </div>
         {% endif %}
     </div>
 
     {% if meeting.status == 'completed' %}
 
-        <!-- summary section -->
+        <!-- Transcript Collapsible (Before Summary) -->
+        {% if meeting.transcript %}
+        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 mb-6 shadow-xl shadow-black/10">
+            <div class="flex items-center justify-between cursor-pointer group" onclick="toggleTranscript()">
+                <h2 class="text-base font-bold text-ef-fg flex items-center gap-2 tracking-tight group-hover:text-ef-green transition-colors">
+                    <i data-lucide="align-left" class="w-4 h-4 text-ef-yellow"></i> Full Transcript
+                </h2>
+                <div class="flex items-center gap-3">
+                    <button onclick="event.stopPropagation(); downloadContent('transcript')"
+                            class="text-xs text-ef-green hover:underline inline-flex items-center gap-1.5 font-medium">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .txt
+                    </button>
+                    <div class="w-6 h-6 rounded-full bg-ef-bg1 border border-ef-bg2 flex items-center justify-center text-ef-grey1">
+                        <i id="toggle-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200"></i>
+                    </div>
+                </div>
+            </div>
+            <div id="transcript-body" class="hidden mt-4 pt-4 border-t border-ef-bg2">
+                <div id="transcript-content" class="bg-ef-bg1 rounded-2xl p-4 sm:p-5 text-ef-fg leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto font-mono text-xs border border-ef-bg2">{{ meeting.transcript }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Summary Section -->
         {% if meeting.summary %}
-        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 mb-6">
+        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 mb-6 shadow-xl shadow-black/10">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-ef-bg2">
-                <h2 class="text-base font-semibold text-ef-fg flex items-center gap-2">
+                <h2 class="text-base font-bold text-ef-fg flex items-center gap-2 tracking-tight">
                     <i data-lucide="file-text" class="w-4 h-4 text-ef-green"></i> Summary
                 </h2>
-                <button onclick="downloadContent('summary')" class="text-xs text-ef-green hover:underline inline-flex items-center gap-1">
+                <button onclick="downloadContent('summary')" class="text-xs text-ef-green hover:underline inline-flex items-center gap-1.5 font-medium">
                     <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .md
                 </button>
             </div>
@@ -96,11 +146,11 @@
         </div>
         {% endif %}
 
-        <!-- action items section -->
+        <!-- Action Items Section -->
         {% if meeting.action_items %}
-        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 mb-6">
+        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 mb-6 shadow-xl shadow-black/10">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-ef-bg2">
-                <h2 class="text-base font-semibold text-ef-fg flex items-center gap-2">
+                <h2 class="text-base font-bold text-ef-fg flex items-center gap-2 tracking-tight">
                     <i data-lucide="check-circle-2" class="w-4 h-4 text-ef-blue"></i> Action Items
                 </h2>
             </div>
@@ -109,59 +159,40 @@
         </div>
         {% endif %}
 
-        <!-- transcript collapsible -->
-        {% if meeting.transcript %}
-        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 mb-6">
-            <div class="flex items-center justify-between cursor-pointer" onclick="toggleTranscript()">
-                <h2 class="text-base font-semibold text-ef-fg flex items-center gap-2">
-                    <i data-lucide="align-left" class="w-4 h-4 text-ef-yellow"></i> Full Transcript
-                </h2>
-                <div class="flex items-center gap-3">
-                    <button onclick="event.stopPropagation(); downloadContent('transcript')"
-                            class="text-xs text-ef-green hover:underline inline-flex items-center gap-1">
-                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Download .txt
-                    </button>
-                    <i id="toggle-icon" data-lucide="chevron-down" class="w-4 h-4 text-ef-grey1 transition-transform"></i>
-                </div>
-            </div>
-            <div id="transcript-body" class="hidden mt-4 pt-4 border-t border-ef-bg2">
-                <div id="transcript-content" class="bg-ef-bg1 rounded-2xl p-4 text-sm text-ef-fg leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto font-mono text-xs">{{ meeting.transcript }}</div>
-            </div>
-        </div>
-        {% endif %}
-
     {% elif meeting.status == 'failed' %}
-        <div class="bg-ef-bg rounded-3xl border border-ef-red/30 p-6 mb-6">
-            <h2 class="text-base font-semibold text-ef-red mb-2 flex items-center gap-2">
+        <div class="bg-ef-bg rounded-3xl border border-ef-red/30 p-6 sm:p-7 mb-6 shadow-xl shadow-black/10">
+            <h2 class="text-base font-bold text-ef-red mb-2 flex items-center gap-2">
                 <i data-lucide="alert-circle" class="w-4 h-4"></i> Processing Failed
             </h2>
             <p class="text-ef-grey2 text-sm mb-4">{{ meeting.error_message or 'Something went wrong.' }}</p>
             <div class="flex flex-wrap items-center gap-3">
-                <button onclick="resummarize({{ meeting.id }})" class="bg-ef-red text-ef-dim text-xs font-semibold py-2 px-4 rounded-xl hover:brightness-110 transition-all inline-flex items-center gap-1.5">
+                <button onclick="resummarize({{ meeting.id }})" class="bg-ef-red text-ef-dim text-xs font-bold py-2.5 px-4 rounded-full hover:brightness-110 transition-all inline-flex items-center gap-1.5">
                     <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Retry Summarization
                 </button>
-                <button onclick="retranscribe({{ meeting.id }})" class="bg-ef-bg1 hover:bg-ef-bg2 border border-ef-bg3 text-ef-fg text-xs font-medium py-2 px-4 rounded-xl transition-all inline-flex items-center gap-1.5">
+                <button onclick="retranscribe({{ meeting.id }})" class="bg-ef-bg1 hover:bg-ef-bg2 border border-ef-bg3 text-ef-fg text-xs font-medium py-2.5 px-4 rounded-full transition-all inline-flex items-center gap-1.5">
                     <i data-lucide="mic" class="w-3.5 h-3.5"></i> Re-transcribe
                 </button>
             </div>
         </div>
 
         {% if meeting.transcript %}
-        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 mb-6">
-            <h2 class="text-base font-semibold text-ef-fg mb-4 flex items-center gap-2">
+        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 mb-6 shadow-xl shadow-black/10">
+            <h2 class="text-base font-bold text-ef-fg mb-4 flex items-center gap-2">
                 <i data-lucide="align-left" class="w-4 h-4 text-ef-yellow"></i> Saved Transcript
             </h2>
-            <div class="bg-ef-bg1 rounded-2xl p-4 text-sm text-ef-fg leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto font-mono text-xs">{{ meeting.transcript }}</div>
+            <div class="bg-ef-bg1 rounded-2xl p-4 sm:p-5 text-ef-fg leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto font-mono text-xs border border-ef-bg2">{{ meeting.transcript }}</div>
         </div>
         {% endif %}
 
     {% else %}
-        <!-- processing spinner -->
-        <div id="processing-box" class="bg-ef-bg rounded-3xl border border-ef-bg2 p-12 text-center" data-id="{{ meeting.id }}">
-            <div class="animate-spin h-10 w-10 border-2 border-ef-bg3 border-t-ef-green rounded-full mx-auto mb-4"></div>
-            <p class="text-ef-fg font-medium">Processing your meeting...</p>
-            <p class="text-sm text-ef-grey1 mt-1">Status: <span id="current-status">{{ meeting.status | capitalize }}</span></p>
-            <p class="text-xs text-ef-grey0 mt-2">This page will update automatically.</p>
+        <!-- Processing Spinner -->
+        <div id="processing-box" class="bg-ef-bg rounded-3xl border border-ef-bg2 p-12 text-center shadow-xl shadow-black/10" data-id="{{ meeting.id }}">
+            <div class="w-12 h-12 rounded-full bg-ef-green/10 border border-ef-green/20 flex items-center justify-center mx-auto mb-4">
+                <div class="animate-spin h-6 w-6 border-2 border-ef-green/30 border-t-ef-green rounded-full"></div>
+            </div>
+            <p class="text-ef-fg font-bold text-base">Processing your meeting...</p>
+            <p class="text-xs text-ef-grey1 mt-1">Status: <span id="current-status" class="font-semibold text-ef-green">{{ meeting.status | capitalize }}</span></p>
+            <p class="text-xs text-ef-grey0 mt-3">This page will update automatically once completed.</p>
         </div>
     {% endif %}
 

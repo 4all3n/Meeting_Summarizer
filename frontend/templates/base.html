@@ -32,7 +32,8 @@
                 },
                 borderRadius: {
                     '2xl': '1rem',
-                    '3xl': '1.25rem',
+                    '3xl': '1.5rem',
+                    '4xl': '2rem',
                 }
             }
         }
@@ -42,18 +43,37 @@
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 </head>
-<body class="h-full bg-ef-dim text-ef-fg" data-api="http://localhost:8000/api">
+<body class="min-h-full bg-ef-dim text-ef-fg flex flex-col antialiased selection:bg-ef-green/20 selection:text-ef-green" data-api="http://localhost:8000/api">
 
-    <!-- minimal header -->
-    <header class="px-6 py-5">
-        <div class="max-w-6xl mx-auto">
-            <a href="/" class="text-xl font-bold text-ef-green tracking-tight">
-                Meeting Summarizer
-            </a>
+    <!-- Modern Floating Pill Header with Live Backend Status -->
+    <header class="pt-6 pb-4 px-4 sm:px-6">
+        <div class="max-w-5xl mx-auto">
+            <div class="bg-ef-bg/80 backdrop-blur-md border border-ef-bg2 rounded-full px-5 py-3 flex items-center justify-between shadow-xl shadow-black/10">
+                <a href="/" class="flex items-center group">
+                    <span class="font-bold text-ef-green tracking-tight text-base sm:text-lg hover:brightness-110 transition-all pl-1">
+                        Meeting Summarizer
+                    </span>
+                </a>
+                
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Live Backend Status Pill -->
+                    <span id="backend-status-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ef-bg1 border border-ef-bg2 text-ef-grey2 transition-all">
+                        <span id="backend-status-dot" class="w-2 h-2 rounded-full bg-ef-green animate-pulse"></span>
+                        <span id="backend-status-text">Backend: Online</span>
+                    </span>
+
+                    <a href="http://localhost:8000/docs" target="_blank" title="API Docs (Swagger UI)"
+                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-ef-bg1 hover:bg-ef-bg2 border border-ef-bg2 text-xs font-medium text-ef-grey2 hover:text-ef-fg transition-all">
+                        <i data-lucide="code-2" class="w-3.5 h-3.5 text-ef-blue"></i>
+                        <span class="hidden sm:inline">API Docs</span>
+                    </a>
+                </div>
+            </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-6 pb-12">
+    <!-- Main Content Container -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-4 pb-16 flex-1 w-full">
         {% block content %}{% endblock %}
     </main>
 

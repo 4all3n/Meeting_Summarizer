@@ -2,113 +2,153 @@
 {% block title %}Home — Meeting Summarizer{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-2">
 
-    <!-- upload card -->
-    <div class="lg:col-span-1">
-        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6">
-            <h2 class="text-base font-semibold text-ef-fg mb-4">Upload Audio</h2>
+    <!-- Upload Audio Section (Balanced Prominent Column) -->
+    <div class="lg:col-span-5">
+        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 shadow-xl shadow-black/10">
+            <div class="mb-5">
+                <h2 class="text-base font-bold text-ef-fg tracking-tight">Upload Recording</h2>
+                <p class="text-xs text-ef-grey1 mt-0.5">Transcribe audio & extract action items</p>
+            </div>
 
             <form id="upload-form" enctype="multipart/form-data">
+                <!-- Drop Zone -->
                 <div id="drop-zone"
-                     class="border-2 border-dashed border-ef-bg3 rounded-2xl p-8 text-center cursor-pointer hover:border-ef-green/50 hover:bg-ef-bg1 transition-all duration-200">
-                    <div class="flex justify-center mb-3 text-ef-grey1">
-                        <i data-lucide="upload" class="w-10 h-10"></i>
+                     class="border-2 border-dashed border-ef-bg3 rounded-2xl p-8 sm:p-10 text-center cursor-pointer hover:border-ef-green hover:bg-ef-bg1/60 transition-all duration-200 group flex flex-col items-center justify-center">
+                    <div class="w-14 h-14 rounded-2xl bg-ef-bg1 border border-ef-bg2 group-hover:border-ef-green/30 group-hover:bg-ef-green/10 flex items-center justify-center text-ef-grey2 group-hover:text-ef-green transition-all mb-4 shadow-sm">
+                        <i data-lucide="upload-cloud" class="w-7 h-7 transition-transform group-hover:-translate-y-0.5"></i>
                     </div>
-                    <p class="text-sm text-ef-grey2 mb-1">Drag & drop audio file here</p>
-                    <p class="text-xs text-ef-grey0">or click to browse</p>
-                    <p class="text-xs text-ef-grey0 mt-2">WAV, MP3, M4A, WebM, OGG, FLAC</p>
+                    <p class="text-sm font-semibold text-ef-fg mb-1">Drag & drop audio file here</p>
+                    <p class="text-xs text-ef-grey1">or <span class="text-ef-green underline underline-offset-2">browse from computer</span></p>
+                    
+                    <div class="flex flex-wrap items-center justify-center gap-1.5 mt-4">
+                        <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-ef-bg1 border border-ef-bg2 text-ef-grey1">WAV</span>
+                        <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-ef-bg1 border border-ef-bg2 text-ef-grey1">MP3</span>
+                        <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-ef-bg1 border border-ef-bg2 text-ef-grey1">M4A</span>
+                        <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-ef-bg1 border border-ef-bg2 text-ef-grey1">FLAC</span>
+                        <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-md bg-ef-bg1 border border-ef-bg2 text-ef-grey1">OGG</span>
+                    </div>
                     <input type="file" id="audio-file" name="file" accept="audio/*" class="hidden">
                 </div>
 
-                <div id="file-info" class="hidden mt-3 p-3 bg-ef-bg1 rounded-xl text-sm">
-                    <span id="file-name" class="font-medium text-ef-fg"></span>
-                    <span id="file-size" class="text-ef-grey1 ml-2"></span>
-                </div>
-
-                <!-- language picker -->
-                <div class="mt-4">
-                    <label for="language-select" class="block text-xs font-semibold text-ef-grey2 mb-1.5">
-                        Language
-                    </label>
-                    <select id="language-select" name="language"
-                            class="w-full bg-ef-bg1 border border-ef-bg3 text-ef-fg text-sm rounded-xl p-2.5 focus:ring-1 focus:ring-ef-green focus:border-ef-green outline-none transition-colors">
-                        <option value="en" selected>English</option>
-                        <option value="auto">Auto-detect (Beta)</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                        <option value="hi">Hindi</option>
-                        <option value="zh">Chinese</option>
-                        <option value="ja">Japanese</option>
-                        <option value="pt">Portuguese</option>
-                        <option value="it">Italian</option>
-                        <option value="nl">Dutch</option>
-                        <option value="ru">Russian</option>
-                        <option value="ar">Arabic</option>
-                        <option value="ko">Korean</option>
-                    </select>
-                </div>
-
-                <div id="progress-container" class="hidden mt-3">
-                    <div class="w-full bg-ef-bg2 rounded-full h-1.5">
-                        <div id="progress-bar" class="bg-ef-green h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <!-- File Info Badge -->
+                <div id="file-info" class="hidden mt-3 p-3 bg-ef-bg1 border border-ef-bg2 rounded-2xl text-sm flex items-center justify-between">
+                    <div class="flex items-center gap-2 truncate pr-2">
+                        <i data-lucide="file-audio" class="w-4 h-4 text-ef-green shrink-0"></i>
+                        <span id="file-name" class="font-medium text-ef-fg truncate text-xs"></span>
                     </div>
-                    <p id="progress-text" class="text-xs text-ef-grey1 mt-1.5">Uploading...</p>
+                    <span id="file-size" class="text-ef-grey1 text-xs shrink-0 font-mono"></span>
                 </div>
 
+                <!-- Language Selector with Perfectly Centered Chevron -->
+                <div class="mt-4">
+                    <label for="language-select" class="block text-xs font-semibold text-ef-grey2 mb-1.5 flex items-center justify-between">
+                        <span>Spoken Language</span>
+                        <span class="text-[10px] font-normal text-ef-grey1">Whisper ASR</span>
+                    </label>
+                    <div class="relative">
+                        <select id="language-select" name="language"
+                                class="w-full appearance-none bg-ef-bg1 border border-ef-bg3 text-ef-fg text-sm rounded-2xl py-3 pl-4 pr-11 focus:ring-1 focus:ring-ef-green focus:border-ef-green outline-none transition-all cursor-pointer">
+                            <option value="en" selected>English</option>
+                            <option value="auto">Auto-detect (Beta)</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="hi">Hindi</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ja">Japanese</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="it">Italian</option>
+                            <option value="nl">Dutch</option>
+                            <option value="ru">Russian</option>
+                            <option value="ar">Arabic</option>
+                            <option value="ko">Korean</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-ef-grey1">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="progress-container" class="hidden mt-4">
+                    <div class="w-full bg-ef-bg2 rounded-full h-2 overflow-hidden">
+                        <div id="progress-bar" class="bg-ef-green h-2 rounded-full transition-all duration-300 shadow-sm shadow-ef-green/50" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-xs text-ef-grey1 mt-1.5 font-mono">Uploading...</p>
+                </div>
+
+                <!-- Submit Button -->
                 <button type="submit" id="upload-btn"
-                        class="mt-4 w-full bg-ef-green text-ef-dim py-2.5 px-4 rounded-xl font-semibold text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        class="mt-5 w-full bg-ef-green text-ef-dim py-3 px-4 rounded-2xl font-bold text-sm hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-ef-green/10 flex items-center justify-center gap-2"
                         disabled>
-                    Upload & Process
+                    <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                    <span>Upload & Process</span>
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- meetings list -->
-    <div class="lg:col-span-2">
-        <h2 class="text-base font-semibold text-ef-fg mb-4">Past Meetings</h2>
-
-        {% if meetings %}
-        <div class="space-y-3" id="meetings-list">
-            {% for m in meetings %}
-            <div id="meeting-card-{{ m.id }}" class="bg-ef-bg rounded-2xl border border-ef-bg2 p-4 hover:border-ef-bg3 transition-all duration-200 flex items-center justify-between">
-                <a href="/meeting/{{ m.id }}" class="flex-1 block pr-4">
-                    <h3 class="font-medium text-ef-fg">{{ m.filename }}</h3>
-                    <p class="text-sm text-ef-grey1 mt-1">
-                        {{ m.created_at[:16] if m.created_at else 'Unknown' }}
-                        {% if m.duration %}
-                            · {{ "%.0f"|format(m.duration // 60) }}m {{ "%.0f"|format(m.duration % 60) }}s
-                        {% endif %}
-                        {% if m.language and m.language != 'auto' %}
-                            · <span class="uppercase text-xs font-semibold bg-ef-bg2 px-1.5 py-0.5 rounded-lg">{{ m.language }}</span>
-                        {% endif %}
-                    </p>
-                </a>
-                <div class="flex items-center gap-3">
-                    <span class="px-3 py-1 rounded-full text-xs font-medium
-                        {% if m.status == 'completed' %}bg-ef-green/15 text-ef-green
-                        {% elif m.status == 'failed' %}bg-ef-red/15 text-ef-red
-                        {% else %}bg-ef-yellow/15 text-ef-yellow{% endif %}">
-                        {{ m.status | capitalize }}
+    <!-- Past Meetings History Section -->
+    <div class="lg:col-span-7">
+        <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 shadow-xl shadow-black/10">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2.5">
+                    <h2 class="text-base font-bold text-ef-fg tracking-tight">Past Meetings</h2>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-ef-bg1 border border-ef-bg2 text-ef-grey2">
+                        {{ meetings|length }}
                     </span>
-                    <button onclick="deleteMeeting(event, {{ m.id }})" title="Delete"
-                            class="text-ef-grey0 hover:text-ef-red p-1.5 rounded-xl hover:bg-ef-red/10 transition-all">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
                 </div>
+                <span class="text-xs text-ef-grey1">Stored locally</span>
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="bg-ef-bg rounded-2xl border border-ef-bg2 p-12 text-center">
-            <div class="flex justify-center mb-4 text-ef-grey0">
-                <i data-lucide="headphones" class="w-12 h-12"></i>
+
+            {% if meetings %}
+            <div class="space-y-3 max-h-[580px] overflow-y-auto pr-1" id="meetings-list">
+                {% for m in meetings %}
+                <div id="meeting-card-{{ m.id }}"
+                     class="group bg-ef-bg1/60 hover:bg-ef-bg1 rounded-2xl border border-ef-bg2 hover:border-ef-bg3 p-4 transition-all duration-200 flex items-center justify-between gap-3 shadow-sm">
+                    <a href="/meeting/{{ m.id }}" class="flex-1 block min-w-0">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="file-audio" class="w-4 h-4 text-ef-aqua shrink-0"></i>
+                            <h3 class="font-semibold text-ef-fg text-sm truncate group-hover:text-ef-green transition-colors">{{ m.filename }}</h3>
+                        </div>
+                        <p class="text-xs text-ef-grey1 mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <span>{{ m.created_at[:16] if m.created_at else 'Unknown' }}</span>
+                            {% if m.duration %}
+                                <span>· {{ "%.0f"|format(m.duration // 60) }}m {{ "%.0f"|format(m.duration % 60) }}s</span>
+                            {% endif %}
+                            {% if m.language and m.language != 'auto' %}
+                                · <span class="uppercase text-[10px] font-bold bg-ef-bg2 px-1.5 py-0.5 rounded-md text-ef-fg">{{ m.language }}</span>
+                            {% endif %}
+                        </p>
+                    </a>
+                    
+                    <div class="flex items-center gap-2.5 shrink-0">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold
+                            {% if m.status == 'completed' %}bg-ef-green/15 text-ef-green border border-ef-green/20
+                            {% elif m.status == 'failed' %}bg-ef-red/15 text-ef-red border border-ef-red/20
+                            {% else %}bg-ef-yellow/15 text-ef-yellow border border-ef-yellow/20{% endif %}">
+                            {{ m.status | capitalize }}
+                        </span>
+                        <button onclick="deleteMeeting(event, {{ m.id }})" title="Delete meeting"
+                                class="text-ef-grey0 hover:text-ef-red p-2 rounded-xl hover:bg-ef-red/10 transition-all opacity-70 group-hover:opacity-100">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-            <p class="text-ef-grey1">No meetings yet. Upload an audio file to get started.</p>
+            {% else %}
+            <div class="rounded-2xl border border-dashed border-ef-bg3 p-12 text-center flex flex-col items-center justify-center">
+                <div class="w-14 h-14 rounded-2xl bg-ef-bg1 border border-ef-bg2 flex items-center justify-center text-ef-grey0 mb-3">
+                    <i data-lucide="headphones" class="w-7 h-7"></i>
+                </div>
+                <p class="text-sm font-semibold text-ef-fg mb-1">No meetings transcribed yet</p>
+                <p class="text-xs text-ef-grey1 max-w-xs">Upload your first audio recording on the left to generate transcripts and structured summaries.</p>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 
 </div>
