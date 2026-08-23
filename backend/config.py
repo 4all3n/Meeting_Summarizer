@@ -10,16 +10,13 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'meetings.db'}")
 
-# transcription config
 TRANSCRIPTION_MODE = os.getenv("TRANSCRIPTION_MODE", "local")
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "medium")
 WHISPER_LANGUAGE = os.getenv("WHISPER_LANGUAGE", "en")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
-# gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
-# limits
 MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "100"))
 ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".webm", ".ogg", ".flac", ".aac"}

@@ -29,8 +29,6 @@ Meeting Transcript:
 {transcript}
 """
 
-# separate prompt for action items — tried doing it in one call but
-# the results were way better when i extract them separately
 ACTION_ITEMS_PROMPT = """Extract ONLY the action items from this meeting transcript.
 For each action item identify:
 - The task description
@@ -46,46 +44,39 @@ Transcript:
 
 
 def _call_gemini(client, prompt):
-    """try the configured model first, fall back to gemini-2.0-flash if it fails"""
+    """try configured model first, fall back to gemini-2.0-flash"""
     models = [GEMINI_MODEL]
-    # add a fallback in case the main model gets deprecated
     if GEMINI_MODEL != "gemini-2.0-flash":
         models.append("gemini-2.0-flash")
 
-    last_error = None
-    for model_name in models:
+    last_err = None
+    for model in models:
         try:
-            print(f"[*] Trying model: {model_name}")
-            resp = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-            )
+            print(f"trying model: {model}")
+            resp = client.models.generate_content(model=model, contents=prompt)
             if resp.text:
                 return resp.text.strip()
         except Exception as e:
-            last_error = e
-            print(f"[!] {model_name} failed: {e}")
+            last_err = e
+            print(f"{model} failed: {e}")
 
-    raise last_error or RuntimeError("All Gemini models failed")
+    raise last_err or RuntimeError("all gemini models failed")
 
 
 def summarize_transcript(transcript):
-    """send transcript to gemini, get back summary + action items"""
+    """send transcript to gemini and get back summary + action items"""
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY not set in .env")
 
     if not transcript or not transcript.strip():
-        raise ValueError("Empty transcript, nothing to summarize")
+        raise ValueError("empty transcript, nothing to summarize")
 
     client = genai.Client(api_key=GEMINI_API_KEY)
 
-    print("[*] Generating summary...")
+    print("generating summary...")
     summary = _call_gemini(client, SUMMARY_PROMPT.format(transcript=transcript))
 
-    print("[*] Extracting action items...")
+    print("extracting action items...")
     actions = _call_gemini(client, ACTION_ITEMS_PROMPT.format(transcript=transcript))
 
-    return {
-        "summary": summary,
-        "action_items": actions,
-    }
+    return {"summary": summary, "action_items": actions}

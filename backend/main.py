@@ -12,10 +12,7 @@ from backend.routers import meetings
 
 init_db()
 
-app = FastAPI(
-    title="Meeting Summarizer API",
-    version="1.0",
-)
+app = FastAPI(title="Meeting Summarizer API", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,

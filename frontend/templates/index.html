@@ -4,7 +4,7 @@
 {% block content %}
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-2">
 
-    <!-- Upload Audio Section (Balanced Prominent Column) -->
+    <!-- Upload section -->
     <div class="lg:col-span-5">
         <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 shadow-xl shadow-black/10">
             <div class="mb-5">
@@ -13,7 +13,6 @@
             </div>
 
             <form id="upload-form" enctype="multipart/form-data">
-                <!-- Drop Zone -->
                 <div id="drop-zone"
                      class="border-2 border-dashed border-ef-bg3 rounded-2xl p-8 sm:p-10 text-center cursor-pointer hover:border-ef-green hover:bg-ef-bg1/60 transition-all duration-200 group flex flex-col items-center justify-center">
                     <div class="w-14 h-14 rounded-2xl bg-ef-bg1 border border-ef-bg2 group-hover:border-ef-green/30 group-hover:bg-ef-green/10 flex items-center justify-center text-ef-grey2 group-hover:text-ef-green transition-all mb-4 shadow-sm">
@@ -32,7 +31,6 @@
                     <input type="file" id="audio-file" name="file" accept="audio/*" class="hidden">
                 </div>
 
-                <!-- File Info Badge -->
                 <div id="file-info" class="hidden mt-3 p-3 bg-ef-bg1 border border-ef-bg2 rounded-2xl text-sm flex items-center justify-between">
                     <div class="flex items-center gap-2 truncate pr-2">
                         <i data-lucide="file-audio" class="w-4 h-4 text-ef-green shrink-0"></i>
@@ -41,7 +39,6 @@
                     <span id="file-size" class="text-ef-grey1 text-xs shrink-0 font-mono"></span>
                 </div>
 
-                <!-- Language Selector with Perfectly Centered Chevron -->
                 <div class="mt-4">
                     <label for="language-select" class="block text-xs font-semibold text-ef-grey2 mb-1.5 flex items-center justify-between">
                         <span>Spoken Language</span>
@@ -71,7 +68,6 @@
                     </div>
                 </div>
 
-                <!-- Progress Bar -->
                 <div id="progress-container" class="hidden mt-4">
                     <div class="w-full bg-ef-bg2 rounded-full h-2 overflow-hidden">
                         <div id="progress-bar" class="bg-ef-green h-2 rounded-full transition-all duration-300 shadow-sm shadow-ef-green/50" style="width: 0%"></div>
@@ -79,7 +75,6 @@
                     <p id="progress-text" class="text-xs text-ef-grey1 mt-1.5 font-mono">Uploading...</p>
                 </div>
 
-                <!-- Submit Button -->
                 <button type="submit" id="upload-btn"
                         class="mt-5 w-full bg-ef-green text-ef-dim py-3 px-4 rounded-2xl font-bold text-sm hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-ef-green/10 flex items-center justify-center gap-2"
                         disabled>
@@ -90,7 +85,7 @@
         </div>
     </div>
 
-    <!-- Past Meetings History Section -->
+    <!-- Meetings list -->
     <div class="lg:col-span-7">
         <div class="bg-ef-bg rounded-3xl border border-ef-bg2 p-6 sm:p-7 shadow-xl shadow-black/10">
             <div class="flex items-center justify-between mb-5">

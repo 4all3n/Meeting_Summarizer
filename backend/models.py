@@ -12,7 +12,6 @@ class Meeting(Base):
     audio_path: Mapped[str] = mapped_column(String(500))
     duration: Mapped[float | None] = mapped_column(Float, nullable=True)
     language: Mapped[str | None] = mapped_column(String(20), nullable=True, default="auto")
-
     status: Mapped[str] = mapped_column(String(20), default="processing")
 
     transcript: Mapped[str | None] = mapped_column(Text, nullable=True)

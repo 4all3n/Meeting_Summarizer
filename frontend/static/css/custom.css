@@ -1,10 +1,8 @@
-/* Everforest Theme Custom Overrides */
-
 * {
     scroll-behavior: smooth;
 }
 
-/* Custom modern scrollbar */
+/* custom scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -24,13 +22,13 @@
     background: #7a8478;
 }
 
-/* Markdown prose typography for Everforest dark */
+/* markdown formatting */
 .prose h3 {
     font-size: 1.05rem;
     font-weight: 700;
     margin-top: 1.25rem;
     margin-bottom: 0.5rem;
-    color: #a7c080; /* ef-green */
+    color: #a7c080;
     letter-spacing: -0.01em;
 }
 
@@ -39,12 +37,12 @@
     font-weight: 600;
     margin-top: 1rem;
     margin-bottom: 0.35rem;
-    color: #83c092; /* ef-aqua */
+    color: #83c092;
 }
 
 .prose p {
     margin: 0.5rem 0;
-    color: #d3c6aa; /* ef-fg */
+    color: #d3c6aa;
     line-height: 1.65;
 }
 
@@ -70,7 +68,7 @@
 
 .prose strong {
     font-weight: 600;
-    color: #dbbc7f; /* ef-yellow */
+    color: #dbbc7f;
 }
 
 .prose code {
@@ -81,7 +79,6 @@
     font-size: 0.85em;
 }
 
-/* Audio seek bar hover animation */
 #audio-progress-container:hover #audio-progress-bar {
     filter: brightness(1.15);
 }

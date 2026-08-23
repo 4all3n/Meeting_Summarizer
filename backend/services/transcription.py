@@ -3,12 +3,12 @@ from backend.config import TRANSCRIPTION_MODE, WHISPER_MODEL, WHISPER_LANGUAGE, 
 
 
 def transcribe_local(audio_path, language=None):
-    """transcribe using whisper running locally"""
+    """run whisper locally on GPU if available"""
     import whisper
     import torch
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"[*] Loading whisper '{WHISPER_MODEL}' on {device}")
+    print(f"loading whisper '{WHISPER_MODEL}' on {device}")
 
     model = whisper.load_model(WHISPER_MODEL, device=device)
 
@@ -16,14 +16,14 @@ def transcribe_local(audio_path, language=None):
     if lang in ("auto", ""):
         lang = None
 
-    transcribe_args = {"audio": str(audio_path)}
+    kwargs = {"audio": str(audio_path)}
     if lang:
-        print(f"[*] Language: {lang}")
-        transcribe_args["language"] = lang
+        print(f"language: {lang}")
+        kwargs["language"] = lang
     else:
-        print("[*] Auto-detecting language")
+        print("auto-detecting language")
 
-    result = model.transcribe(**transcribe_args)
+    result = model.transcribe(**kwargs)
 
     duration = 0.0
     if result.get("segments"):
@@ -33,7 +33,7 @@ def transcribe_local(audio_path, language=None):
 
 
 def transcribe_groq(audio_path, language=None):
-    """use groq whisper api as fallback"""
+    """use groq whisper api instead of running locally"""
     from groq import Groq
 
     if not GROQ_API_KEY:
@@ -60,10 +60,10 @@ def transcribe_groq(audio_path, language=None):
 
 
 def transcribe_audio(audio_path, language=None):
-    """pick local whisper or groq based on config"""
+    """pick between local whisper and groq api based on config"""
     if TRANSCRIPTION_MODE == "api":
-        print("[*] Using Groq API")
+        print("using groq api for transcription")
         return transcribe_groq(audio_path, language=language)
     else:
-        print("[*] Using local Whisper")
+        print("using local whisper")
         return transcribe_local(audio_path, language=language)

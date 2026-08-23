@@ -13,10 +13,9 @@ class Base(DeclarativeBase):
 
 
 def init_db():
-    """create tables if they dont exist, and add any missing columns"""
+    """create tables + run any migrations for older dbs"""
     Base.metadata.create_all(bind=engine)
 
-    # had to add language column later so this handles old databases
     db_file = BASE_DIR / "meetings.db"
     if db_file.exists():
         try:
@@ -29,7 +28,7 @@ def init_db():
                 conn.commit()
             conn.close()
         except Exception as e:
-            print(f"[!] migration warning: {e}")
+            print(f"migration warning: {e}")
 
 
 def get_db():

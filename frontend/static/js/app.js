@@ -1,16 +1,11 @@
-// read API base from the body tag so we dont hardcode localhost everywhere
-const API_BASE = document.body.dataset.api || 'http://localhost:8000/api';
+var API_BASE = document.body.dataset.api || 'http://localhost:8000/api';
 
-
-// helper to clean any stray checkbox markdown [-] from text
 function cleanMarkdownCheckboxes(text) {
     if (!text) return '';
     return text.replace(/-\s*\[\s*\]\s*/g, '- ');
 }
 
-
-// ============ live backend status checker ============
-
+// checks if the backend api is reachable
 function checkBackendHealth() {
     var badge = document.getElementById('backend-status-badge');
     var dot = document.getElementById('backend-status-dot');
@@ -26,41 +21,37 @@ function checkBackendHealth() {
                 text.textContent = 'Backend: Online';
                 badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ef-bg1 border border-ef-bg2 text-ef-grey2 transition-all';
             } else {
-                setOffline();
+                markOffline();
             }
         })
         .catch(function () {
-            setOffline();
+            markOffline();
         });
 
-    function setOffline() {
+    function markOffline() {
         dot.className = 'w-2 h-2 rounded-full bg-ef-red';
         text.textContent = 'Backend: Offline';
         badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ef-red/15 border border-ef-red/30 text-ef-red transition-all';
     }
 }
 
-
-// ============ shared functions ============
-
 async function deleteMeeting(event, meetingId, redirectHome) {
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
-
     if (!confirm('Delete this meeting? The audio file will also be removed.')) return;
 
     try {
-        let res = await fetch(API_BASE + '/meetings/' + meetingId, { method: 'DELETE' });
+        var res = await fetch(API_BASE + '/meetings/' + meetingId, { method: 'DELETE' });
         if (res.ok) {
             if (redirectHome) {
                 window.location.href = '/';
             } else {
-                let card = document.getElementById('meeting-card-' + meetingId);
+                var card = document.getElementById('meeting-card-' + meetingId);
                 if (card) {
                     card.remove();
-                    let list = document.getElementById('meetings-list');
+                    var list = document.getElementById('meetings-list');
                     if (list && list.children.length === 0) location.reload();
                 } else {
                     location.reload();
@@ -74,20 +65,13 @@ async function deleteMeeting(event, meetingId, redirectHome) {
     }
 }
 
-
-// ============ upload page (index.html) & detail page ============
-
 document.addEventListener('DOMContentLoaded', function () {
-    // initialize lucide icons
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    if (window.lucide) lucide.createIcons();
 
-    // check backend status on load & every 6 seconds
     checkBackendHealth();
     setInterval(checkBackendHealth, 6000);
 
-    // --- upload form setup ---
+    // upload form
     var dropZone = document.getElementById('drop-zone');
     var fileInput = document.getElementById('audio-file');
     var uploadForm = document.getElementById('upload-form');
@@ -108,11 +92,9 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             dropZone.classList.add('border-ef-green', 'bg-ef-bg1');
         });
-
         dropZone.addEventListener('dragleave', function () {
             dropZone.classList.remove('border-ef-green', 'bg-ef-bg1');
         });
-
         dropZone.addEventListener('drop', function (e) {
             e.preventDefault();
             dropZone.classList.remove('border-ef-green', 'bg-ef-bg1');
@@ -186,22 +168,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // --- meeting detail page stuff ---
+    // meeting detail page — render markdown and set up audio player
 
-    // render markdown in summary and action items (with checkbox syntax stripped)
     var summaryDiv = document.getElementById('summary-content');
     if (summaryDiv && summaryDiv.dataset.raw) {
-        var cleanSummary = cleanMarkdownCheckboxes(summaryDiv.dataset.raw);
-        summaryDiv.innerHTML = marked.parse(cleanSummary);
+        summaryDiv.innerHTML = marked.parse(cleanMarkdownCheckboxes(summaryDiv.dataset.raw));
     }
 
     var actionsDiv = document.getElementById('actions-content');
     if (actionsDiv && actionsDiv.dataset.raw) {
-        var cleanActions = cleanMarkdownCheckboxes(actionsDiv.dataset.raw);
-        actionsDiv.innerHTML = marked.parse(cleanActions);
+        actionsDiv.innerHTML = marked.parse(cleanMarkdownCheckboxes(actionsDiv.dataset.raw));
     }
 
-    // Custom Everforest Audio Player Setup
+    // audio player
     var audio = document.getElementById('meeting-audio');
     if (audio) {
         var mid = audio.dataset.meetingId;
@@ -213,30 +192,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var playPauseBtn = document.getElementById('play-pause-btn');
         var audioProgressBar = document.getElementById('audio-progress-bar');
-        var progressContainer = document.getElementById('audio-progress-container');
+        var audioProgressContainer = document.getElementById('audio-progress-container');
         var timeDisplay = document.getElementById('audio-time');
         var muteBtn = document.getElementById('mute-btn');
 
-        function formatTime(seconds) {
-            if (isNaN(seconds) || seconds === Infinity) return '00:00';
-            var m = Math.floor(seconds / 60);
-            var s = Math.floor(seconds % 60);
+        function formatTime(sec) {
+            if (isNaN(sec) || sec === Infinity) return '00:00';
+            var m = Math.floor(sec / 60);
+            var s = Math.floor(sec % 60);
             return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
         }
 
-        function updatePlayPauseIcon(isPlaying) {
+        function updatePlayPauseIcon(playing) {
             if (!playPauseBtn) return;
-            var iconName = isPlaying ? 'pause' : 'play';
-            var extraClass = isPlaying ? '' : ' ml-0.5';
-            playPauseBtn.innerHTML = '<i data-lucide="' + iconName + '" class="w-4 h-4 fill-current' + extraClass + '"></i>';
+            var icon = playing ? 'pause' : 'play';
+            var extra = playing ? '' : ' ml-0.5';
+            playPauseBtn.innerHTML = '<i data-lucide="' + icon + '" class="w-4 h-4 fill-current' + extra + '"></i>';
             if (window.lucide) lucide.createIcons({ root: playPauseBtn });
         }
 
-        function updateMuteIcon(isMuted) {
+        function updateMuteIcon(muted) {
             if (!muteBtn) return;
-            var iconName = isMuted ? 'volume-x' : 'volume-2';
-            var colorClass = isMuted ? 'text-ef-red' : 'text-ef-grey1 hover:text-ef-fg';
-            muteBtn.innerHTML = '<i data-lucide="' + iconName + '" class="w-4 h-4 ' + colorClass + '"></i>';
+            var icon = muted ? 'volume-x' : 'volume-2';
+            var color = muted ? 'text-ef-red' : 'text-ef-grey1 hover:text-ef-fg';
+            muteBtn.innerHTML = '<i data-lucide="' + icon + '" class="w-4 h-4 ' + color + '"></i>';
             if (window.lucide) lucide.createIcons({ root: muteBtn });
         }
 
@@ -271,10 +250,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (audioProgressBar) audioProgressBar.style.width = '0%';
         });
 
-        if (progressContainer) {
-            progressContainer.addEventListener('click', function (e) {
+        if (audioProgressContainer) {
+            audioProgressContainer.addEventListener('click', function (e) {
                 if (!audio.duration) return;
-                var rect = progressContainer.getBoundingClientRect();
+                var rect = audioProgressContainer.getBoundingClientRect();
                 var pos = (e.clientX - rect.left) / rect.width;
                 audio.currentTime = pos * audio.duration;
             });
@@ -288,30 +267,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // poll status if meeting is still processing
+    // poll status while audio is still processing
     var processingBox = document.getElementById('processing-box');
     if (processingBox) {
         var meetingId = processingBox.dataset.id;
         var pollTimer = setInterval(function () {
             fetch(API_BASE + '/meetings/' + meetingId + '/status')
-                .then(function (res) { return res.json(); })
+                .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    var statusEl = document.getElementById('current-status');
-                    if (statusEl) {
-                        statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
-                    }
+                    var el = document.getElementById('current-status');
+                    if (el) el.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
                     if (data.status === 'completed' || data.status === 'failed') {
                         clearInterval(pollTimer);
                         location.reload();
                     }
                 })
-                .catch(function () { /* backend might be busy */ });
+                .catch(function () {});
         }, 2000);
     }
 });
 
-
-// ============ meeting detail actions ============
 
 function toggleTranscript() {
     var body = document.getElementById('transcript-body');
@@ -324,8 +299,8 @@ function toggleTranscript() {
 }
 
 function downloadContent(type) {
-    var name = document.querySelector('h1');
-    var baseName = name ? name.textContent.replace(/\.[^/.]+$/, '') : 'meeting';
+    var heading = document.querySelector('h1');
+    var baseName = heading ? heading.textContent.replace(/\.[^/.]+$/, '') : 'meeting';
     var content, ext;
 
     if (type === 'summary') {

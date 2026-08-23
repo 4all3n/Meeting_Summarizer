@@ -6,14 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-
-# the fastapi backend url
 API_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
 
 
 @app.route("/")
 def index():
-    """home page — shows upload form and list of past meetings"""
     try:
         resp = requests.get(f"{API_URL}/meetings", timeout=5)
         meetings = resp.json() if resp.ok else []
@@ -24,7 +21,6 @@ def index():
 
 @app.route("/meeting/<int:meeting_id>")
 def meeting_detail(meeting_id):
-    """shows transcript + summary for a specific meeting"""
     try:
         resp = requests.get(f"{API_URL}/meetings/{meeting_id}", timeout=5)
         if not resp.ok:
