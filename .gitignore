@@ -7,14 +7,8 @@ venv/
 .venv/
 env/
 
-# env and secrets
+# env
 .env
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
 
 # testing
 .pytest_cache/
@@ -26,4 +20,3 @@ backend/uploads/
 *.db
 sample_audio/
 plans/
-*.pdf
